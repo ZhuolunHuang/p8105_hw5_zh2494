@@ -64,8 +64,54 @@ baltimore_test %>%
 there is 0.6455 that unsolved homicide in Baltimore unsolved
 The CI is from 0.628 to 0.663
 
+iterate across cities, test it on each cites.
 ```{r}
+prop_test_function = function(city_df){
+  city_summary = 
+    city_df %>% 
+    summarize(
+      unsolved = sum(resolution == "unsolved") ,
+      n = n()
+    )
+  
+  city_test =
+    prop.test(
+    x = city_summary %>% pull(unsolved), 
+    n = city_summary %>% pull(n))
 
+  return(city_test)
+}
 
+prop_test_function(baltimore_df)
+
+homicide_df %>% 
+  filter(city_state == "AlbuquerqueNM") %>% 
+  prop_test_function()
+```
+
+iterate across all cites
+```{r}
+results_df = 
+  nested_df = 
+  homicide_df %>%
+  nest(data = uid:resolution) %>% 
+  mutate(
+    test_results = map(data, prop_test_function),
+    tidy_results = map(test_results, broom::tidy)
+  ) %>% 
+  select(city_state, tidy_results) %>% 
+  unnest(tidy_results) %>% 
+  select(city_state, estimate, starts_with("conf"))
+```
+
+try to make a plot showing estimates and confidence intervals
+
+```{r}
+results_df %>% 
+  mutate(city_state = fct_reorder(city_state, estimate)) %>% 
+  ggplot(aes(x = city_state, y = estimate)) + 
+  geom_point() +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
 
