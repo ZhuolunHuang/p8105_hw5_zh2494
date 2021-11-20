@@ -82,11 +82,11 @@ prop_test_function = function(city_df){
   return(city_test)
 }
 
-prop_test_function(baltimore_df)
+# prop_test_function(baltimore_df)
 
-homicide_df %>% 
-  filter(city_state == "AlbuquerqueNM") %>% 
-  prop_test_function()
+#homicide_df %>% 
+#  filter(city_state == "AlbuquerqueNM") %>% 
+#  prop_test_function()
 ```
 
 iterate across all cites
@@ -114,4 +114,105 @@ results_df %>%
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high)) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
+
+```{r}
+homicide_df %>% 
+  group_by(city_state) %>% 
+  summarize(
+    unsolved = sum(resolution == "unsolved"),
+    n = n()
+  ) %>% 
+  mutate(
+    test_results = map2(unsolved, n, prop.test),
+    tidy_results = map(test_results, broom::tidy)
+  ) %>% 
+  select(city_state, tidy_results) %>% 
+  unnest(tidy_results) %>% 
+  select(city_state, estimate, starts_with("conf"))
+
+```
+
+## problem2 
+
+```{r}
+data_df = 
+  tibble(
+  file_name = list.files("./data/zip_data/")) %>% 
+  mutate(
+    path = str_c("./data/zip_data/", file_name),
+    data = map(.x = path, ~read_csv(.x)),
+    arm = str_extract(file_name, "[a-z]{1,3}"),
+    id = readr::parse_number(file_name)) %>% 
+  select(arm, id, data) %>% 
+  unnest(data) %>% 
+  pivot_longer(
+    week_1:week_8,
+    names_to = "week",
+    values_to = "observations"
+  ) %>% 
+  mutate(
+    week = readr::parse_number(week)
+  )
+```
+
+
+```{r}
+head(data_df)
+```
+
+Make a spaghetti plot showing observations on each subject over time, and comment on differences between groups.
+```{r}
+data_df %>% 
+  unite(arm_id, c(arm, id), sep = " ", remove = FALSE) %>% 
+  select(-id) %>% 
+  ggplot(aes(x = week, y = observations)) + 
+  geom_point(aes(group = arm_id, color = arm)) +
+  geom_line(aes(group = arm_id, color = arm))
+```
+
+```{r}
+##read_file = function(names){
+##  file_summary = tibble(
+##    names = read_csv("./data/zip_data/file_names")
+##  )
+##  return(file_summary)
+##}
+```
+
+```{r}
+#file_df = map(file_names, read_file)
+```
+
+
+
+## problem 3
+```{r}
+set.seed(10)
+
+iris_with_missing = 
+  iris %>%
+  map_df(~replace(.x, sample(1:150, 20), NA)) %>%
+  mutate(Species = as.character(Species)) %>% 
+  janitor::clean_names()
+```
+
+write a function. 
+```{r}
+fill_in_missing = function(x) {
+  if (is.numeric(x)) {
+    x = replace(x, is.na(x), mean(x, na.rm = TRUE))
+  }
+  if (is.character(x)) {
+    x = replace(x, is.na(x), "virginica")
+  }
+  return(x)
+}
+```
+
+```{r}
+iris_without_missing = map_dfr(iris_with_missing, fill_in_missing)
+
+```
+
+
 
