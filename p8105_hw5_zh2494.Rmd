@@ -210,7 +210,10 @@ fill_in_missing = function(x) {
 ```
 
 ```{r}
-iris_without_missing = map_dfr(iris_with_missing, fill_in_missing)
+iris_without_missing =
+  map_dfr(iris_with_missing, fill_in_missing)
+
+iris_without_missing
 
 ```
 
