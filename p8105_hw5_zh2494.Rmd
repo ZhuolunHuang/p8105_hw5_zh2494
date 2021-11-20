@@ -5,7 +5,7 @@ date: "11/16/2021"
 output: github_document
 ---
 
-```{r}
+```{r setup, include = FALSE, message = FALSE}
 library(p8105.datasets)
 library(tidyverse)
 library(viridis)
@@ -29,7 +29,7 @@ theme_set(theme_minimal() + theme(legend.position = "bottom"))
 ```
 
 # question 1
-```{r}
+```{r, message=FALSE}
 homicide_df = 
   read_csv("./data/homicide-data.csv", na = c("", "Unknown")) %>% 
   mutate(city_state = str_c(city, state),
@@ -42,7 +42,7 @@ homicide_df =
 ```
 
 Let's focus on Baltimore, MD.
-```{r}
+```{r, message=FALSE}
 baltimore_df = 
   homicide_df %>% 
   filter(city_state == "BaltimoreMD")
@@ -65,7 +65,7 @@ there is 0.6455 that unsolved homicide in Baltimore unsolved
 The CI is from 0.628 to 0.663
 
 iterate across cities, test it on each cites.
-```{r}
+```{r, message=FALSE}
 prop_test_function = function(city_df){
   city_summary = 
     city_df %>% 
@@ -81,16 +81,10 @@ prop_test_function = function(city_df){
 
   return(city_test)
 }
-
-# prop_test_function(baltimore_df)
-
-#homicide_df %>% 
-#  filter(city_state == "AlbuquerqueNM") %>% 
-#  prop_test_function()
 ```
 
 iterate across all cites
-```{r}
+```{r, message=FALSE}
 results_df = 
   nested_df = 
   homicide_df %>%
@@ -134,7 +128,12 @@ homicide_df %>%
 
 ## problem2 
 
-```{r}
+read, clean and tidy data.  
+`arm` shows which group this row belongs to. "con" means control group. "exp" means experimental group.  
+`id` contains identiacl id for each participants.  
+`week` means the number of week of observation.  
+`observation` is the measured value of interest. 
+```{r, message = FALSE}
 data_df = 
   tibble(
   file_name = list.files("./data/zip_data/")) %>% 
@@ -155,7 +154,6 @@ data_df =
   )
 ```
 
-
 ```{r}
 head(data_df)
 ```
@@ -167,23 +165,11 @@ data_df %>%
   select(-id) %>% 
   ggplot(aes(x = week, y = observations)) + 
   geom_point(aes(group = arm_id, color = arm)) +
-  geom_line(aes(group = arm_id, color = arm))
+  geom_line(aes(group = arm_id, color = arm)) +
+  ggtitle("Observation during weeks")
 ```
 
-```{r}
-##read_file = function(names){
-##  file_summary = tibble(
-##    names = read_csv("./data/zip_data/file_names")
-##  )
-##  return(file_summary)
-##}
-```
-
-```{r}
-#file_df = map(file_names, read_file)
-```
-
-
+Comment: From the graph we can see that the observations in control group is higher than that in experiment group.  
 
 ## problem 3
 ```{r}
@@ -196,7 +182,10 @@ iris_with_missing =
   janitor::clean_names()
 ```
 
-write a function. 
+write a function that takes a vector as an argument; replaces missing values using the rules defined:  
+For numeric variables, you should fill in missing values with the mean of non-missing values  
+For character variables, you should fill in missing values with "virginica".  
+
 ```{r}
 fill_in_missing = function(x) {
   if (is.numeric(x)) {
@@ -209,6 +198,7 @@ fill_in_missing = function(x) {
 }
 ```
 
+For every vector in data frame (iris_with_missing) value run into this function. The result is the iris_without_missing
 ```{r}
 iris_without_missing =
   map_dfr(iris_with_missing, fill_in_missing)
